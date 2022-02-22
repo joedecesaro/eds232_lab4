@@ -171,3 +171,9 @@ Our test set accuracy turns out to be 98.1% -- that's quite a bit lower than the
 
 This concludes our first example -- you just saw how you can build and a train a neural network to classify handwritten digits in less than 20 lines of R code. In the next chapter, we'll go into detail about every moving piece we just previewed and clarify what's going on behind the scenes. You'll learn about tensors, the data-storing objects going into the network; about tensor operations, which layers are made of; and about gradient descent, which allows your network to learn from its training examples.
 
+# 4b
+
+Not required
+
+# 4c
+

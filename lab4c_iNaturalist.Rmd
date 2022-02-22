@@ -1,0 +1,104 @@
+---
+title: "lab4c - iNaturalist"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# load libraries
+librarian::shelf(
+  devtools,
+  keras,
+  reticulate,
+  tensorflow,
+  tidyverse)
+
+```
+
+# Lac 4c - iNaturalist
+```{r}
+# path to folder containing species directories of images
+dir_train_mini <- "/courses/EDS232/inaturalist-2021/train_mini"
+
+# path to output table of paths, which could be read by R, eg read_csv()
+inat_spp_dirs_csv <- "~/inat_species_dirs.csv" # I don't see this csv in taylor??
+
+# get list of directories, one per species (n = 10,000 species)
+dirs_spp <- list.dirs(dir_train_mini, recursive = F)
+n_spp <- length(dirs_spp)
+
+# set seed (for reproducible results) 
+# just before sampling (otherwise get different results)
+# based on your username (unique amongst class)
+Sys.info()[["user"]] %>% # sys.info pulls my user name
+  digest::digest2int() %>% 
+  set.seed()
+i10 <- sample(1:n_spp, 10)
+
+# show the 10 indices sampled of the 10,000 possible 
+i10
+
+# show the 10 species directory names
+species_10 <- basename(dirs_spp)[i10]
+species_10
+```
+
+```{r}
+original_dataset_dir <- "/courses/EDS232/inaturalist-2021/train_mini"
+
+# base
+base_dir <- "/Users/jdecesaro/EDS232/eds232_lab4"
+
+train_dir <- file.path(base_dir, "train")
+validation_dir <- file.path(base_dir, "validation")
+test_dir <- file.path(base_dir, "test")
+
+# create base folders (train, validate, test)
+# dir.create(train_dir)
+# dir.create(validation_dir)
+# dir.create(test_dir)
+
+# create folder for all 10 species
+for (i in 1:length(species_10)){
+  dir.create(file.path(train_dir, str_sub(species_10[[i]], start = 1, end = 5)))
+  dir.create(file.path(validation_dir, str_sub(species_10[[i]], start = 1, end = 5)))
+  dir.create(file.path(test_dir, str_sub(species_10[[i]], start = 1, end = 5)))
+}
+```
+
+
+```{r}
+# create folder for all 10 species based on beginning ID
+for (i in 1:length(species_10)){
+  dir.create(file.path(train_dir, str_sub(species_10[[i]], start = 1, end = 5)))
+  dir.create(file.path(validation_dir, str_sub(species_10[[i]], start = 1, end = 5)))
+  dir.create(file.path(test_dir, str_sub(species_10[[i]], start = 1, end = 5)))
+}
+```
+
+```{r}
+# create test, validation, and training groups of images
+for(i in 1:length(species_10)){
+  # create 5 groups of 10 random samples
+  species_samples_10 <- replicate(5, 
+                                  sample(list.files(paste0(original_dataset_dir, "/", species_10[[i]]), 
+                                                    full.names = TRUE), replace = FALSE, 10))
+  ## train n = 30 ##
+  train <- rbind(species_samples_10[,1], species_samples_10[,2], species_samples_10[,3])
+  file.copy(from = train, 
+            to = paste0(train_dir, "/", str_sub(species_10[[i]], start = 1, end = 5)))
+  ## validation n = 10 ##
+  validate <- species_samples_10[,4]
+  file.copy(from = validate,
+            to = paste0(validation_dir, "/", str_sub(species_10[[i]], start = 1, end = 5)))
+  ## train n = 10 ##
+  test <- species_samples_10[,5]
+  file.copy(from = test,
+            to = paste0(test_dir, "/", str_sub(species_10[[i]], start = 1, end = 5)))
+  }
+```
+
+
