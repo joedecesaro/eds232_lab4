@@ -2,6 +2,11 @@
 .Rhistory
 .Rapp.history
 
+/train
+/test
+/validation
+/inat_spp_images.csv
+
 # Session Data files
 .RData
 
