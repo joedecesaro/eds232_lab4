@@ -6,6 +6,7 @@
 /test
 /validation
 /inat_spp_images.csv
+/inat
 
 # Session Data files
 .RData
