@@ -86,7 +86,8 @@ d %>%
 ```{r}
 model <- keras_model_sequential() %>%
   layer_dense(units = 16, activation = "relu", input_shape = c(10000)) %>%
-  layer_dense(units = 16, activation = "relu") %>%
+  layer_dense(units = 16, activation = "relu") %>% 
+  layer_flatten() %>% 
   layer_dense(units = 1, activation = "sigmoid")
 
 model %>% compile(
@@ -155,10 +156,10 @@ mdl1_history_rds <- file.path(dir_models, "INat_binary_history.rds")
 # check if already fitted and saved model
 if (!file.exists(mdl1_history_rds) | !file.exists(mdl1_h5)){
   # fit model
-  history <- model %>% fit_generator(
+  history <- model %>% fit(
     train_generator,
-    steps_per_epoch = 3,
-    epochs = 10,
+    steps_per_epoch = 5,
+    epochs = 30,
     validation_data = validation_generator,
     validation_steps = 5)
   
