@@ -1,5 +1,7 @@
 ---
 title: "lab4c - iNaturalist"
+author: "Joe DeCesaro"
+date: "3/2/2022"
 output: html_document
 ---
 
@@ -14,7 +16,6 @@ librarian::shelf(
 
 ```
 
-# Lac 4c - iNaturalist
 ## Set Up
 ```{r}
 # path to folder containing species directories of images
@@ -81,7 +82,8 @@ d %>%
 # system(glue("tree {dir_dest}"))
 ```
 
-## 2 Species (binary classification) - neural net.
+## 2 Species (binary classification)
+###  Data Processing
 
 ```{r}
 train_dir_sp2 <- paste0(dir_dest,"/spp2/train")
@@ -89,12 +91,13 @@ validation_dir_sp2 <- paste0(dir_dest,"/spp2/validation")
 test_dir_sp2 <- paste0(dir_dest,"/spp2/test")
 ```
 
-```{r}
+```{r, warning=FALSE}
 # All images will be rescaled by 1/255
 train_datagen_sp2 <- image_data_generator(rescale = 1/255)
 validation_datagen_sp2 <- image_data_generator(rescale = 1/255)
 test_datagen_sp2 <- image_data_generator(rescale = 1/255)
 
+# For 2 species set up generators
 train_generator_sp2 <- flow_images_from_directory(
   # This is the target directory
   train_dir_sp2,
@@ -121,52 +124,49 @@ test_generator_sp2 <- flow_images_from_directory(
   class_mode = "binary")
 ```
 
-```{r}
-model_sp2 <- keras_model_sequential() %>%
+###  Neural Net
+
+```{r, warning=FALSE}
+model_sp2_nn <- keras_model_sequential() %>%
   layer_dense(units = 16, activation = "relu", input_shape = c(150, 150, 3)) %>%
   layer_dense(units = 16, activation = "relu") %>% 
   layer_flatten() %>% 
   layer_dense(units = 1, activation = "sigmoid")
 ```
 
-
 ```{r}
-model_sp2 %>% compile(
+model_sp2_nn %>% compile(
   optimizer = "rmsprop",
   loss = "binary_crossentropy",
   metrics = c("accuracy"))
 ```
 
 ```{r}
-model_sp2 %>% compile(
+model_sp2_nn %>% compile(
   optimizer = optimizer_rmsprop(learning_rate = 0.0001),
   loss = "binary_crossentropy",
   metrics = c("accuracy"))
 ```
 
 ```{r}
-summary(model_sp2)
-```
-
-
-```{r}
-history_sp2 <- model_sp2 %>% fit(
+history_sp2_nn <- model_sp2_nn %>% fit(
     train_generator_sp2,
-    steps_per_epoch = 5,
-    epochs = 30,
+    steps_per_epoch = 6,
+    epochs = 20,
     validation_data = validation_generator_sp2,
     validation_steps = 1)
 ```
 
 ```{r}
-plot(history_sp2)
+plot(history_sp2_nn)
 ```
 
 ```{r}
-results <- model_sp2 %>% evaluate(test_generator_sp2)
+results_sp2_nn <- model_sp2_nn %>% evaluate(test_generator_sp2)
+results_sp2_nn
 ```
 
-## 2 Species (binary classification) - convolutional neural net.
+### Convolutional Neural Net
 
 ```{r}
 cnn_model_sp2 <- keras_model_sequential() %>% 
@@ -193,15 +193,11 @@ cnn_model_sp2 %>% compile(
 ```
 
 ```{r}
-summary(cnn_model_sp2)
-```
-
-```{r}
 # train the model
 history_cnn_sp2 <- cnn_model_sp2 %>% fit(
   train_generator_sp2,
-  steps_per_epoch = 5,
-  epochs = 30,
+  steps_per_epoch = 6,
+  epochs = 20,
   validation_data = validation_generator_sp2,
   validation_steps = 1)
 str(history_cnn_sp2)
@@ -212,10 +208,22 @@ plot(history_cnn_sp2)
 ```
 
 ```{r}
-results <- cnn_model_sp2 %>% evaluate(test_generator_sp2)
+results_cnn_sp2 <- cnn_model_sp2 %>% evaluate(test_generator_sp2)
 ```
 
-## 10 Species (multi-class classification) - neural net
+### Comparing Standard Neural Net and Convolutional Neural Net
+
+```{r}
+results_sp2_nn
+
+results_cnn_sp2
+
+```
+
+The standard neural net has an accuracy of `r round(results_sp2_nn[[2]], 3)` and a loss rate of `r round(results_sp2_nn[[1]], 3)`. The convolutional neural net has an accuracy of `r round(results_cnn_sp2[[2]], 3)` and a loss rate of `r round(results_cnn_sp2[[1]], 3)`. Based on these results for the 2 species classification I don't think there is enough of a difference to choose between the two models. I ran the models several times and it would switch between the two models as to which was performing better.
+
+## 10 Species (multi-class classification) 
+### Data Processing
 
 ```{r}
 # new directories
@@ -231,11 +239,8 @@ validation_datagen_sp10 <- image_data_generator(rescale = 1/255)
 test_datagen_sp10 <- image_data_generator(rescale = 1/255)
 
 train_generator_sp10 <- flow_images_from_directory(
-  # This is the target directory
   train_dir_sp10,
-  # This is the data generator
   train_datagen_sp10,
-  # All images will be resized to 150x150
   target_size = c(150, 150),
   batch_size = 5,
   # categorical class because we have more than 2 species
@@ -256,8 +261,10 @@ test_generator_sp10 <- flow_images_from_directory(
   class_mode = "categorical")
 ```
 
+### Neural Net
+
 ```{r}
-model_sp10 <- keras_model_sequential() %>% 
+model_sp10_nn <- keras_model_sequential() %>% 
   layer_dense(units = 64, activation = "relu", input_shape = c(150, 150, 3)) %>% 
   layer_dense(units = 64, activation = "relu") %>% 
   layer_flatten() %>% 
@@ -265,16 +272,15 @@ model_sp10 <- keras_model_sequential() %>%
 ```
 
 ```{r}
-model_sp10 %>% compile(
+model_sp10_nn %>% compile(
   optimizer = optimizer_rmsprop(learning_rate = 0.0001),
   loss = "categorical_crossentropy",
-  metrics = c("accuracy")
-)
+  metrics = c("accuracy"))
 ```
 
 ```{r}
 # train our model
-history_sp10 <- model_sp10 %>% fit(
+history_sp10_nn <- model_sp10_nn %>% fit(
   train_generator_sp10,
   steps_per_epoch = 5,
   epochs = 30,
@@ -283,15 +289,14 @@ history_sp10 <- model_sp10 %>% fit(
 ```
 
 ```{r}
-plot(history_sp10)
+plot(history_sp10_nn)
 ```
 
 ```{r}
-results_sp10 <- model_sp10 %>% evaluate(test_generator_sp10)
+results_sp10_nn <- model_sp10_nn %>% evaluate(test_generator_sp10)
 ```
 
-
-## 10 Species (multi-class classification) - convolutional neural net
+### Convolutional Neural Net
 
 ```{r}
 cnn_model_sp10 <- keras_model_sequential() %>% 
@@ -308,17 +313,14 @@ cnn_model_sp10 <- keras_model_sequential() %>%
   layer_flatten() %>% 
   layer_dropout(rate = 0.5) %>% 
   layer_dense(units = 512, activation = "relu") %>% 
-  layer_dense(units = 10, activation = "softmax")  
+  layer_dense(units = 10, activation = "softmax")
+```
 
- 
+```{r}
 cnn_model_sp10 %>% compile(
   loss = "categorical_crossentropy",
   optimizer = optimizer_rmsprop(learning_rate = 0.0001),
   metrics = c("acc"))
-```
-
-```{r}
-summary(cnn_model_sp10)
 ```
 
 ```{r}
@@ -329,18 +331,24 @@ history_cnn_sp10 <- cnn_model_sp10 %>% fit(
   epochs = 30,
   validation_data = validation_generator_sp10,
   validation_steps = 10)
-str(history_cnn_sp10)
 ```
 
 ```{r}
-plot(history_cnn_sp2)
+plot(history_cnn_sp10)
 ```
 
 ```{r}
 results_cnn_sp10 <- cnn_model_sp10 %>% evaluate(test_generator_sp10)
 ```
 
+### Comparing Standard Neural Net and Convolutional Neural Net
 
+```{r}
+results_sp10_nn
 
+results_cnn_sp10
+```
+
+The standard neural net has an accuracy of `r round(results_sp10_nn[[2]], 3)` and a loss rate of `r round(results_sp10_nn[[1]], 3)`. The convolutional neural net has an accuracy of `r round(results_cnn_sp10[[2]], 3)` and a loss rate of `r round(results_cnn_sp10[[1]], 3)`. Based on these results for the 10 species classification I don't think there is enough of a difference to choose between the two models. I ran the models several times and it would switch between the two as to which was performing better.
 
 
